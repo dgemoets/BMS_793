@@ -1,0 +1,186 @@
+---
+title: "BMS 793 - Functions, Loops and Conditional Statements"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+## need to load this data frame.
+sleep.study <- read.csv("SleepStudy.csv")   ## make sure you have the path correct
+```
+
+## Functions
+
+You've already worked with functions.  For example, summary(), mean(), apply(),... all are functions.  In R you can define your own functions.  This is useful when you want to reuse a chunk of code.  Here are a few examples.
+
+### Example 1
+This function performs the "log(x+1)" transformation.  Note the format. 
+
+```{r}
+
+log.trans <- function(x){
+  temp <- log(x+1)
+  return(temp)
+}
+
+log.trans(0)
+```
+
+
+### Example 2
+This function computes the mean of a subset of data from a dataframe.  Actually it's not a very useful function since it only works on the sleep.study dataframe, and only subsets using the LarkOwl variable.
+
+```{r}
+mean.subsets <- function(df,group,varble){
+  temp <- subset(df, LarkOwl==group)
+  temp2 <- mean(temp[[varble]])
+  return(temp2)
+}
+
+mean.subsets(sleep.study,"Neither","GPA")
+```
+
+
+### Example 3
+This example finds the values that are beyond +/- 3 standard deviations beyond the mean.  It returns a list object which we need to talk about.
+```{r}
+find.outlier <- function(x){
+  temp <- scale(x)
+  temp2 <- which((temp < -3 ) | (temp > 3))
+  temp3 <- x[temp2]
+  return(list(temp2,temp3))
+  
+}
+
+y <- c(4,5,3,5,5,3,5,7,9,6,5,10000)
+find.outlier(y)
+```
+
+
+
+## Conditional Statements
+
+These commands are useful.  Using if/then statements allow your code to make decisions.  Here are some toy examples.
+
+### Example 1 
+Note that == is a logical comparision to test if two values are equal.  != tests if not equal.  The ifelse() function is a cute shortcut for if/else comparisons.
+```{r}
+x <-3
+if(x == 3){print("yes")} else {print("no")}
+if(x != 3){print("yes")} else {print("no")}
+ifelse(x==3,"yes","no")
+```
+
+### Example 2
+The examples below are similar to Example 1 above.  
+```{r}
+if(sleep.study$GPA[5] > 2){print("Passing")}
+
+if(sleep.study$GPA[5] > 2){
+  print("Passing")} else {
+    print("Failing")
+  }
+
+if((sleep.study$GPA[5] > 2) & (sleep.study$GPA[5] < 3)){print("C")} else {print("not a C")}
+```
+
+## Loops
+
+The first two examples illustrate a for loop.  These allow you to repeat some operation a fixed number of times.
+
+### Example 1
+```{r}
+y <- c("a","b","c")
+
+for (i in y){
+  print(i)
+}
+```
+
+### Example 2
+This example goes through values in a list comparing each value to 3. 
+```{r}
+x<-c(3,4,5,1,6,4,3)
+for (i in 1:7){
+  if(x[i]>3){
+    print("greater")
+    } else if (x[i]<3) { 
+    print("less")
+    } else {
+     print("equal")
+      }
+  
+}
+```
+
+The next two examples illustrate while loops, which allow you to repeat an operation until a condition is met.  
+
+### Example 3
+Starting at 1, count to 9.
+```{r}
+y <- 1
+
+while(y<10){
+  y <- y+1
+  print(y)
+}
+```
+
+### Example 4
+This example starts at the beginning of the GPA data in the sleep.study data frame and stops when it finds the first grade that is less than or equal to 2.
+```{r}
+grd <- 4  ## initialize grd with value greater than 2
+i <- 1   ## start at the firs entry in the data frame
+
+while(grd > 2){  
+  grd <- sleep.study$GPA[i]
+  print(grd)
+  print(i)
+  i <- i+1    ## increase i by 1
+}
+```
+
+
+## Exercises
+
+### 1 
+Write a function that finds the Euclidean distance (sqrt(x^2+y^2)) between two values.
+
+```{r}
+
+```
+
+
+### 2
+Write a function the finds the second highest value in a vector (list of data, e.g., x<-c(2,4,5,6)).  
+
+```{r}
+
+```
+
+
+### 3
+Use the ifelse() statement to find all the values in a vector (list of data, e.g., x<-c(2,4,5,6)) that are greater than 2.
+
+```{r}
+
+```
+
+
+### 4
+Write a for loop that steps through a vector to find its cummulative sum (don't use the cumsum() function in R).  For example, the cumulative sum of (0.1, 0.4, 0.3, 0.2) is (0.1, 0.5, 0.8, 1).  
+
+```{r}
+
+```
+
+
+### 5 (This one is the most challenging)
+Write a function the finds the values that are the "outliers" in a boxplot.  That is, the values that are outside of Q1-1.5\*(IQR), Q3+1.5\*(IQR), where IQR is the interquartile range: Q3-Q1.  Assume the input is a data vector.  You can use the quantile() function to find Q1 (25th percentile) and Q3 (75th percentile).
+
+```{r}
+
+```
+
+
+
