@@ -28,7 +28,7 @@ log.trans(0)
 
 
 ### Example 2
-This function computes the mean of a subset of data from a dataframe.  Actually it's not a very useful function since it only works on the sleep.study dataframe, and only subsets using the LarkOwl variable.
+This function computes the mean of a subset of data from a data frame.  Actually it's not a very useful function since it only works on the sleep.study data frame, and only subsets using the LarkOwl variable.
 
 ```{r}
 mean.subsets <- function(df,group,varble){
@@ -63,7 +63,7 @@ find.outlier(y)
 These commands are useful.  Using if/then statements allow your code to make decisions.  Here are some toy examples.
 
 ### Example 1 
-Note that == is a logical comparision to test if two values are equal.  != tests if not equal.  The ifelse() function is a cute shortcut for if/else comparisons.
+Note that == is a logical comparison to test if two values are equal.  != tests if not equal.  The ifelse() function is a cute shortcut for if/else comparisons.
 ```{r}
 x <-3
 if(x == 3){print("yes")} else {print("no")}
@@ -168,7 +168,7 @@ Use the ifelse() statement to find all the values in a vector (list of data, e.g
 
 
 ### 4
-Write a for loop that steps through a vector to find its cummulative sum (don't use the cumsum() function in R).  For example, the cumulative sum of (0.1, 0.4, 0.3, 0.2) is (0.1, 0.5, 0.8, 1).  
+Write a for loop that steps through a vector to find its cumulative sum (don't use the cumsum() function in R).  For example, the cumulative sum of (0.1, 0.4, 0.3, 0.2) is (0.1, 0.5, 0.8, 1).  
 
 ```{r}
 
