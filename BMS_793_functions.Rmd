@@ -23,9 +23,23 @@ log.trans <- function(x){
   return(temp)
 }
 
+log.trans <- function(x){log(x+1)}
+
+
 log.trans(0)
 ```
 
+```{r}
+sqr.stuff <- function(y){
+  temp <- y^2
+  temp1 <- temp+4
+  temp2 <- temp1/2
+  return(temp2)
+}
+
+sqr.stuff(2)
+sqr.stuff(c(1,2,3,4))
+```
 
 ### Example 2
 This function computes the mean of a subset of data from a data frame.  Actually it's not a very useful function since it only works on the sleep.study data frame, and only subsets using the LarkOwl variable.
@@ -49,11 +63,10 @@ find.outlier <- function(x){
   temp2 <- which((temp < -3 ) | (temp > 3))
   temp3 <- x[temp2]
   return(list(temp2,temp3))
-  
-}
+  }
 
 y <- c(4,5,3,5,5,3,5,7,9,6,5,10000)
-find.outlier(y)
+y.oulr <- find.outlier(y)
 ```
 
 
@@ -76,6 +89,7 @@ The examples below are similar to Example 1 above.
 ```{r}
 if(sleep.study$GPA[5] > 2){print("Passing")}
 
+
 if(sleep.study$GPA[5] > 2){
   print("Passing")} else {
     print("Failing")
@@ -95,13 +109,14 @@ y <- c("a","b","c")
 for (i in y){
   print(i)
 }
+
 ```
 
 ### Example 2
 This example goes through values in a list comparing each value to 3. 
 ```{r}
 x<-c(3,4,5,1,6,4,3)
-for (i in 1:7){
+for (i in 1:length(x)){
   if(x[i]>3){
     print("greater")
     } else if (x[i]<3) { 
@@ -147,15 +162,29 @@ while(grd > 2){
 Write a function that finds the Euclidean distance (sqrt(x^2+y^2)) between two values.
 
 ```{r}
+euc.dist <- function(x,y){
+  return(sqrt(x^2+y^2))
+}
 
+euc.dist(2,5)
 ```
 
 
 ### 2
-Write a function the finds the second highest value in a vector (list of data, e.g., x<-c(2,4,5,6)).  
+Write a function the finds the second largest value in a vector (list of data, e.g., x<-c(2,4,5,6)).  
 
 ```{r}
+second.max <- function(x){
+  n <-length(x)-1
+  temp <- sort(x)
+  temp2 <- temp[n]
+  return(temp2)
+}
 
+y<-c(3,4,5,6,4,5,7,9,2)
+second.max(y)
+x<-c(2,4,5,6)
+second.max(x)
 ```
 
 
@@ -163,7 +192,8 @@ Write a function the finds the second highest value in a vector (list of data, e
 Use the ifelse() statement to find all the values in a vector (list of data, e.g., x<-c(2,4,5,6)) that are greater than 2.
 
 ```{r}
-
+x<-c(3,4,6,1,0,4,-3,6)
+ifelse(x>2,"yes","no")
 ```
 
 
@@ -171,6 +201,21 @@ Use the ifelse() statement to find all the values in a vector (list of data, e.g
 Write a for loop that steps through a vector to find its cumulative sum (don't use the cumsum() function in R).  For example, the cumulative sum of (0.1, 0.4, 0.3, 0.2) is (0.1, 0.5, 0.8, 1).  
 
 ```{r}
+cumul.sum <- function(x){
+  n <- length(x)
+  temp <- rep(NA,n)  ## initialize vector for sums
+  sm <- temp[1] <- x[1]     ## initialize with first value in x
+  for (i in 2:n){  ## start at second value since sm initialized at x[1]
+    sm <- sm + x[i]  ## compute the cumulative sum
+    temp[i] <- sm    ## store sum in output vector
+  }
+return(temp)  
+}
+
+## test
+y <- c(3,4,6,8,6,4)
+cumul.sum(y)
+cumsum(y)
 
 ```
 
@@ -180,6 +225,19 @@ Write a function the finds the values that are the "outliers" in a boxplot.  Tha
 
 ```{r}
 
+boxplot.outlrs <- function(x){
+  Q1 <- quantile(x,probs = 0.25)
+  Q3 <- quantile(x,probs = 0.75)
+  IQR <- Q3-Q1
+  upper <- Q3 + 1.5*IQR
+  lower <- Q1 - 1.5*IQR
+  return(x[which((x<lower) | (x>upper))])
+}
+
+## test
+y <- c(-903,477,634,845,233,40000)
+boxplot.outlrs(y)
+boxplot(y)
 ```
 
 
