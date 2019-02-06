@@ -1,0 +1,199 @@
+---
+title: "BMS 793 - Functions, Loops and Conditional Statements"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+## need to load this data frame.
+sleep.study <- read.csv("SleepStudy.csv")   ## make sure you have the path correct
+```
+
+## Intro to dplyr and the most important concept: piping
+
+Up to this point we've used "temp" variables to store output for intermediate calculations.  The following example illustrates this.
+
+### Example 1
+In the sleep.study dataframe the Gender variable is Male=1, Female=0.  
+
+```{r}
+sleep.study.M <- subset(sleep.study, Gender=="1")
+sleep.study.M.sorted <- sleep.study.M[order(sleep.study.M$GPA, decreasing = TRUE),]
+sleep.study.M.top.ten <- sleep.study.M.sorted[1:10,]
+sleep.study.M.top.ten
+rm(sleep.study.M.top.ten)
+
+```
+
+It would be nice to have a general format to avoid the need for intermediate (temporary) variables.  In the package dplyr is "piping" operator: %>%.  Here is the above example using piping rather than temporary variables.
+
+### Example 2
+```{r}
+sleep.study %>% 
+  filter(Gender=="1") %>% 
+  arrange(desc(GPA)) %>%
+  slice(1:10) -> sleep.study.M.top.ten
+sleep.study.M.top.ten
+## could put on one line: sleep.study %>% filter(Gender=="1") %>% arrange(desc(GPA)) %>%  slice(1:10) -> sleep.study.M.top.ten
+
+```
+
+The advantage of using piping in the previous example is it avoids the cluttered code using temporary variables.  More importantly for us, piping is a fundamental UNIX concept as well.  Let's first work with some basic dplyr fuctions, then practice with piping.
+
+
+## Basic dplyr functions 
+
+Here are some basic functions.  We'll start with filter(), which is the dplyr version of subset(); they work very similarly
+
+### Example 3
+
+```{r}
+# these do the same thing
+subset(sleep.study,Gender=="1")
+filter(sleep.study,Gender=="1")
+```
+
+### Example 4
+
+```{r}
+filter(sleep.study, Gender=="0" & GPA > 3)
+```
+
+
+The function arrange() will order a data frame by a column.
+
+### Example 5
+```{r}
+arrange(sleep.study,GPA)
+sleep.study[order(sleep.study$GPA),]
+```
+
+The arrange() function will order by one group, the order another group within the first group.
+
+### Example 6
+
+```{r}
+arrange(sleep.study, ClassesMissed,GPA)
+
+```
+
+The select() function is another way to extract columns from a data frame.
+
+### Example 7
+
+These all do the same thing.
+
+```{r}
+select(sleep.study, Gender, GPA)
+sleep.study[,c("Gender","GPA")]
+subset(sleep.study,select=c(Gender,GPA))
+```
+
+Of the basic dplyr funcitions, group_by() is the most useful. 
+
+### Example 8
+
+Find the average GPA for M and F.  Note that summarise just calls summary functions on grouped data.
+```{r}
+sleep.Gender <- group_by(sleep.study, Gender)
+summarise(sleep.Gender, mean=mean(GPA))
+```
+
+Note that sleep.Gender looks the same as the sleep.study dataframe, but is grouped by Gender.
+
+```{r}
+class(sleep.Gender)
+```
+
+We can group by more than one variable.
+
+### Example 9
+
+```{r}
+sleep.Gdr.clss <- group_by(sleep.study, Gender,ClassYear)
+summarise(sleep.Gdr.clss, mean=mean(GPA))
+
+```
+
+
+
+## Piping 
+
+Let's start simple.  Piping is another way to express function syntax.  
+
+### Example 7 
+
+Think of the %>% as an arrow inputing the value.
+```{r}
+log(2)
+2 %>% log
+2 %>% log()
+```
+
+### Example 8
+
+```{r}
+sleep.study %>% filter(Gender=="1")
+filter(sleep.study,Gender=="1")
+```
+
+So far this seems silly.  One advantage is we can string %>% together.
+
+### Example 9
+
+(Pull works like select, but the output is a vector and not a dataframe.) 
+```{r}
+sleep.study %>% filter(Gender=="1") %>% pull(GPA)  %>% mean
+
+```
+
+### Example 10
+
+Revisit Example 2.
+```{r}
+sleep.study %>%   
+  filter(Gender=="1") %>% 
+  arrange(desc(GPA)) %>%
+  slice(1:10) -> sleep.study.M.top.ten
+sleep.study.M.top.ten
+
+```
+
+## Exercises
+
+### 1
+
+Use filter() to find the following subset of the sleep.study data: ClassesMissed=0, LarkOwl=Lark, Drinks < 5  
+
+```{r}
+
+```
+
+### 2 
+
+Use group_by to find the proportion of missed classes for the following subset: LarkOwl=Owl, Drinks > 5, AverageSleep < 7
+
+```{r}
+
+```
+
+### 3 
+
+Use piping (%>%) to find the summary stats (summary()) of the Drinks variable in the sleep.study dataset.
+
+```{r}
+
+```
+
+### 4 
+
+Use piping to round the mean GPA in the sleep study dataset to one decimal place.
+
+```{r}
+
+```
+
+### 5
+
+Look up the mutate() function.  Use piping to create a new variable Drink.Day that divides the Drinks variable by 7 for each observation.  
