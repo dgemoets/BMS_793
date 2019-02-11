@@ -90,7 +90,7 @@ sleep.study[,c("Gender","GPA")]
 subset(sleep.study,select=c(Gender,GPA))
 ```
 
-Of the basic dplyr funcitions, group_by() is the most useful. 
+Of the basic dplyr functions, group_by() is the most useful. 
 
 ### Example 8
 

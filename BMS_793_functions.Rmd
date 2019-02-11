@@ -166,6 +166,8 @@ euc.dist <- function(x,y){
   return(sqrt(x^2+y^2))
 }
 
+#euc.dist <- function(x,y){sqrt(x^2+y^2)}
+
 euc.dist(2,5)
 ```
 
