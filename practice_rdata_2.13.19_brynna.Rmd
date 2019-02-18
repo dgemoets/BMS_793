@@ -1,0 +1,116 @@
+---
+title: "R Data Sample 2.13.19"
+author: "Brynna Manibusan"
+date: "2/13/2019"
+output: html_document
+---
+
+```{r}
+mouse_data <- read.csv("~/Desktop/BMS793/rdData - rdData.csv")
+```
+
+```{r}
+library(ggplot2)
+```
+
+## Subset for separate plots for time ##
+
+```{r}
+sub27 <- subset(mouse_data, age == 27)
+sub10 <- subset(mouse_data, age == 10)
+```
+
+## Checking how variables are characterized ##
+
+```{r}
+str(mouse_data)
+```
+
+# Aggregating age=27 group #
+
+```{r}
+mean27 <- aggregate(nucleiCount ~ genotype + location + age, sub27, FUN = "mean")
+
+sd27 <- aggregate(nucleiCount ~ genotype + location + age, sub27, FUN = "sd")
+
+data27 <- cbind(mean27, sd27$nucleiCount)
+
+colnames(data27) <- c("genotype", "location", "age", "mean", "sd")
+```
+
+# Aggregating age=10 group #
+
+```{r}
+mean10 <- aggregate(nucleiCount ~ genotype + location + age, sub10, FUN = "mean")
+
+sd10 <- aggregate(nucleiCount ~ genotype + location + age, sub10, FUN = "sd")
+
+data10 <- cbind(mean10, sd10$nucleiCount)
+
+colnames(data10) <- c("genotype", "location", "age", "mean", "sd")
+```
+
+# Aggregating full data set #
+
+```{r}
+data_full_mn <- aggregate(nucleiCount ~ genotype + location + age, mouse_data, FUN = "mean")
+
+data_full_sd <- aggregate(nucleiCount ~ genotype + location + age, mouse_data, FUN = "sd")
+
+data_full <- cbind(data_full_mn, data_full_sd$nucleiCount)
+
+colnames(data_full) <- c("genotype", "location", "age", "mean", "sd")
+```
+
+# Plotting age = 27 group only #
+
+```{r}
+ggplot(data27, aes(x = location, 
+                  y = mean, 
+                  color = genotype,
+                  group = genotype)) +
+  labs(title = "Nuclei Count at Time 27") +
+  theme_bw() +
+  geom_line(linetype = 2) +
+  geom_point(size = 3, aes(shape = genotype)) +
+  geom_errorbar(aes(ymin = mean - sd, ymax = mean + sd), 
+                width = .2, 
+                position = position_dodge(0.05)) +
+  theme(plot.title = element_text(hjust = 0.5))  
+```
+
+# Plotting age = 10 group only #
+
+```{r}
+ggplot(data10, aes(x = location, 
+                  y = mean, 
+                  color = genotype,
+                  group = genotype)) +
+  labs(title = "Nuclei Count at Time 10") + 
+  theme_bw() +
+  geom_line(linetype = 2) +
+  geom_point(size = 3, aes(shape = genotype)) +
+  geom_errorbar(aes(ymin = mean - sd, ymax = mean + sd),
+                width = .2,
+                position = position_dodge(0.05)) +
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
+
+# Plotting the full datsa set #
+
+```{r}
+ggplot(data_full, aes(x = location, 
+                  y = mean, 
+                  color = interaction(genotype, age),
+                  group = interaction(genotype, age))) +
+  labs(title = "Mean Nuclei Count with Error Bars") +
+  theme_linedraw() +
+  geom_line(linetype = 2) +
+  geom_point(size = 4, aes(shape = interaction(genotype, age))) +
+  geom_errorbar(aes(ymin = mean - sd, ymax = mean + sd), 
+                width = .2, 
+                position = position_dodge(0.05)) +
+  theme(plot.title = element_text(hjust = 0.5))  
+```
+
+
