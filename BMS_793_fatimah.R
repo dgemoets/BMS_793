@@ -28,11 +28,19 @@ stack.data[stack.data$unit=="unit1",]$sex <- "F"
 #####################################################################
 ## Fatimah's data
 
+<<<<<<< HEAD
 mouse.data <- read.csv("~/Desktop/flash/BMS_793B/fatimah/BMS_793_fatimah_data.csv")
 mouse.data1 <- mouse.data[,seq(3,37,by=2)]                  # extract AMP data
 mouse.data2 <- gather(mouse.data1, key="id", value="amp")   # stack AMP data
 
 mouse.meta <- read.csv("~/Desktop/flash/BMS_793B/fatimah/meta_data1.csv", header=FALSE)      # load in meta data file
+=======
+mouse.data <- read.csv("BMS_793_fatimah_data.csv")
+mouse.data1 <- mouse.data[,seq(3,37,by=2)]                  # extract AMP data
+mouse.data2 <- gather(mouse.data1, key="id", value="amp")   # stack AMP data
+
+mouse.meta <- read.csv("meta_data1.csv", header=FALSE)      # load in meta data file
+>>>>>>> 48c151969c6d4a7646e84fa1a46a966163acff56
 mouse.meta1 <- mouse.meta[c(1,2,11),seq(2,36,by=2)]         # extract sex, left/right and other useful data
 mouse.meta2 <- as.data.frame(t(mouse.meta1))                # transpose (using t()) to put into stacked form
 
@@ -46,7 +54,11 @@ mouse.data3 <- cbind(mouse.data2, mouse.meta3,time)                             
 
 ## test plot
 ggplot(mouse.data3, aes(x=time,y=amp,color=mouse.id))+geom_point(alpha=0.2)
+<<<<<<< HEAD
 fatimah.data <- mouse.data3
 saveRDS(fatimah.data,"fatimah.data.rds")  # this will save the final data frame
 
 
+=======
+save(mouse.data3)  # this will save the final data frame
+>>>>>>> 48c151969c6d4a7646e84fa1a46a966163acff56
