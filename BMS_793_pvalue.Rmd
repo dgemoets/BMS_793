@@ -1,0 +1,169 @@
+---
+title: "P Value Introduction"
+author: "Darren Gemoets"
+date: "February 20, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# P value introduction
+
+* What is a p value?  What does it measure?
+
+* Are p values reliable?  How are they calculated? 
+
+* How else can statistical significance be calculated?
+
+* How does sample size effect p values? 
+
+
+## Introductory example
+
+One sample t-test.  Very simple (not often used) but allows us to focus on p value concepts.
+
+Suppose we want to test H0: mu=5 vs Ha: mu not equal 5.  Let's do a simulation.
+
+```{r}
+n <- 5 # sample size
+mu <- 5
+
+for (i in 1:10){
+samp <- rnorm(n,mean=mu,sd=1)  # generate some data assuming null is true
+mean.samp <- mean(samp)  # calculate the mean
+
+test.stat <- (mean.samp-mu)/sd(samp)
+
+if(test.stat > 0){  ## test stat is in right (upper) tail 
+pval <- pnorm(test.stat,lower.tail = FALSE)
+} else {
+pval <- pnorm(test.stat,lower.tail = TRUE)  
+}
+print(pval)
+}
+```
+
+What if the data are skewed?  
+
+```{r}
+n <- 5 # sample size
+mu <- 5
+
+for (i in 1:10){
+samp <- exp(rnorm(n,mean=mu,sd=1))  # generate some data assuming null is true
+mean.samp <- mean(samp)  # calculate the mean
+
+test.stat <- (mean.samp-mu)/sd(samp)
+
+if(test.stat > 0){
+pval <- pnorm(test.stat,lower.tail = FALSE)
+} else {
+pval <- pnorm(test.stat,lower.tail = TRUE)  
+}
+print(pval)
+}
+```
+
+## Randomization example
+
+We can find p values via simulation.
+
+```{r}
+## p value based on simulation
+n<- 30
+N <- 1000
+x.bar <- rep(NA,N)
+for (i in 1:N){
+  x.bar[i] <- mean(sample(c(0,1),n,replace = TRUE))
+  }
+hist(x.bar)
+
+## data
+p.hat <- 0.7
+
+sum(x.bar>p.hat)/N
+
+```
+
+
+## Sampling distributions
+
+We need to understand how random sampling behaves.  That is, we know that if we take a sample from a population, that sample is only one out of an infinite number we could have chosen, and that each sample will be different.  This variation in sampling needs to be understood.
+
+To this end, lets consider the data from our NHANES dataset as our *population*.  From the population we'll take some random samples.  Load the NHANES data, take a sample of size 50 from the population.  Find the average age of the sample.
+
+```{r}
+NHANES <- read.csv("/Volumes/New Volume/flash_2.8.2019/BMS_793B/data/NHANES.csv")
+
+age.sample <- sample(NHANES$age, 50)
+mean(age.sample)
+```
+
+What value did you get?  Note that we all got different answers (as expected, we all got a different sample). 
+
+Let's see much the sample mean changes with each new sample.  The following code will take a sample of size 50 from the population of ages, find the mean, and store it in a list.  Once done, we'll make a histogram of all of these sample means.
+
+```{r}
+n <- 50  ## sample size 
+N <- 500 ## number of simulated samples
+mean.list <- rep(NA,N)
+for (i in 1:N){
+ temp<-sample(NHANES$age,n)    # compute sample
+ temp.mean <- mean(temp)        # find the mean
+ mean.list[i] <- temp.mean       # store it
+}
+hist(mean.list)
+```
+
+We call this distribution a *sampling distribution* and the bell-shape is called a *normal curve*.  Find the mean and standard deviation of the mean.list (all the sample means), and also make a histogram of the NHANES$age variable and find the mean and standard deviation of all the ages in the population.
+
+```{r}
+hist(NHANES$age)
+mean(NHANES$age)
+sd(NHANES$age)
+```
+
+What if the population is skewed?  What happens to the sampling distribution?
+
+```{r}
+N<- 500
+n <- 3
+x.bar <- rep(NA,N)
+mu=5
+for (i in 1:N){
+samp <- exp(rnorm(n,mean=mu,sd=1))  # generate some data assuming null is true
+x.bar[i] <- mean(samp)  # calculate the mean
+}
+hist(x.bar)
+```
+
+
+### Confidence intervals
+
+We can do inference with confidence intervals. 
+
+```{r}
+samp <- rnorm(30,mean=5,sd=1)
+t.test(samp, mu=1)
+```
+
+## P values via simulation (I'll fix this up for later)
+
+```{r}
+## Frequencies A=0.7, B=0.1, C=0.1, D=0.1
+
+N<-10000
+y <- rep(NA,N)
+for (i in 1:N){
+x<-sample(c('A','B','C','D'),4,replace=TRUE,prob = c(0.7,0.1,0.1,0.1))
+y[i]<-paste0(x,collapse = "")
+
+}
+sort(table(y),decreasing = TRUE)[1:10]/N
+sum(y=="ABCD")/N
+
+```
+
+
