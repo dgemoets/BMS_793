@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 * How else can statistical significance be calculated?
 
-* How does sample size effect p values? 
+* How does sample size effect p values? What else effects p values?
 
 
 ## Introductory example
@@ -95,7 +95,7 @@ We need to understand how random sampling behaves.  That is, we know that if we 
 To this end, lets consider the data from our NHANES dataset as our *population*.  From the population we'll take some random samples.  Load the NHANES data, take a sample of size 50 from the population.  Find the average age of the sample.
 
 ```{r}
-NHANES <- read.csv("/Volumes/New Volume/flash_2.8.2019/BMS_793B/data/NHANES.csv")
+NHANES <- read.csv("NHANES.csv")
 
 age.sample <- sample(NHANES$age, 50)
 mean(age.sample)
@@ -148,6 +148,22 @@ We can do inference with confidence intervals.
 samp <- rnorm(30,mean=5,sd=1)
 t.test(samp, mu=1)
 ```
+
+
+## Statistical power
+
+R shiny app for power calculations: <https://casertamarco.shinyapps.io/power/>
+
+Power curves.
+```{r}
+library(pwr)
+pwr.t.test(n = 50, d = 1, sig.level = 0.05, type = c("one.sample"), alternative = c("two.sided"))
+
+curve(pwr.t.test(x, d = 1, sig.level = 0.002, type = c("one.sample"), alternative = c("two.sided"))$power,from=0, to=100,ylab="Power")
+
+```
+
+
 
 ## P values via simulation (I'll fix this up for later)
 
