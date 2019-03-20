@@ -27,7 +27,7 @@ Using the `prcomp()` and `princomp()` functions in R to perform principle compon
 ```{r}
 #princomp(dat,cor=FALSE)
 temp<-prcomp(dat)
-temp.eigen<-eigen(cov(dat))
+#temp.eigen<-eigen(cov(dat))
 temp  ## print the principle components.
 pca<-princomp(dat, cor=FALSE)
 summary(pca)   ## different output
@@ -71,6 +71,13 @@ dat<-mvrnorm(n = 500, mu=c(0,0), Sigma=matrix(c(2,0,0,2),nrow=2, ncol=2))
 par(pty="s")
 plot(dat,ylim=c(-4,4),xlim=c(-4,4))
 
+pca <- prcomp(dat)
+pca.data = data.frame(pca = pca$x)
+prop.pca <- pca$sdev^2/sum(pca$sdev^2)  ## find proportion of variance explained
+
+ggplot(pca.data) + geom_point(aes(pca.PC1, pca.PC2), size = 2.5) +
+  labs(x = paste("PC1 (", percent(prop.pca[1]), ")", sep=""),
+       y = paste("PC2 (", percent(prop.pca[2]), ")", sep=""))
 ```
 
 This example already has most of the variability in the x direction.  Can you guess what the princ. comp. decomposition will look like?
@@ -81,6 +88,13 @@ dat<-mvrnorm(n = 500, mu=c(0,0), Sigma=matrix(c(2,0,0,0.1),nrow=2, ncol=2))
 par(pty="s")
 plot(dat,ylim=c(-4,4),xlim=c(-4,4))
 
+pca <- prcomp(dat)#,scale.=TRUE,center=TRUE)
+pca.data = data.frame(pca = pca$x)
+prop.pca <- pca$sdev^2/sum(pca$sdev^2)  ## find proportion of variance explained
+
+ggplot(pca.data) + geom_point(aes(pca.PC1, pca.PC2), size = 2.5) +
+  labs(x = paste("PC1 (", percent(prop.pca[1]), ")", sep=""),
+       y = paste("PC2 (", percent(prop.pca[2]), ")", sep=""))
 ```
 
 ### PCA with categorical variable
@@ -144,6 +158,23 @@ par(pty="s")
 plot(dat[,c(1,2)],ylim=c(-4,4),xlim=c(-4,4))
 plot(dat[,c(1,3)],ylim=c(-4,4),xlim=c(-4,4))
 plot(dat[,c(2,3)],ylim=c(-4,4),xlim=c(-4,4))
+```
+
+```{r}
+pca <- prcomp(dat,  ## omit categorical variables
+              center = TRUE,  ## can use if you want.
+              scale. = TRUE) 
+
+prop.pca <- pca$sdev^2/sum(pca$sdev^2)    ## percent variation explained
+
+
+plot(pca, type="l") # a "scree" plot (we'll discuss later)
+
+dataset = data.frame(pca = pca$x)
+
+ggplot(dataset) + geom_point(aes(pca.PC1, pca.PC2), size = 2.5) +
+  labs(x = paste("PC1 (", percent(prop.pca[1]), ")", sep=""),
+       y = paste("PC2 (", percent(prop.pca[2]), ")", sep=""))
 
 
 ```
@@ -186,6 +217,20 @@ ggplot(dataset) + geom_point(aes(pca.PC1, pca.PC2, colour = grps), size = 2.5) +
 For you.  Do PCA using all four quantitative variables (just use the code above).
 
 ```{r}
+pca <- prcomp(iris[,-5],  ## omit categorical variables
+              center = TRUE,  ## can use if you want.
+              scale. = TRUE) 
+
+prop.pca <- pca$sdev^2/sum(pca$sdev^2)    ## percent variation explained
+
+
+plot(pca, type="l") # a "scree" plot (we'll discuss later)
+
+dataset = data.frame(grps = iris[,5], pca = pca$x)
+
+ggplot(dataset) + geom_point(aes(pca.PC1, pca.PC2, colour = grps), size = 2.5) +
+  labs(x = paste("PC1 (", percent(prop.pca[1]), ")", sep=""),
+       y = paste("PC2 (", percent(prop.pca[2]), ")", sep=""))
 
 ```
 
