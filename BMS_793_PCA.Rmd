@@ -1,20 +1,23 @@
 ---
-title: "BIOS_6xx_PCA.Rmd"
+title: "BMS_793_PCA.Rmd"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 ##knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(stats)
+library(MASS)
+library(scales)
 ```
 
 ## Intro PCA Example
 
-Simple two dimensional example with fake data.
+Simple two dimensional example with fake data.  Create and plot some fake bivariate data.
 
 
 ```{r simple}
-library(stats)
-library(MASS)
+
 set.seed(666)
 dat<-mvrnorm(n = 500, mu=c(0,0), Sigma=matrix(c(2,1.5,1.5,2),nrow=2, ncol=2)) 
 plot(dat)
@@ -33,26 +36,26 @@ pca$sdev[1]^2/sum(pca$sdev^2)  ## find proportion of variance explained
 
 ```
 
+
 ```{r}
 par(pty="s")
 plot(dat,ylim=c(-4,4),xlim=c(-4,4))
-arrows(0, 0, 0.8419, 0.5397,length=0.15,col="red")
-arrows(0, 0, -0.5397, 0.8419,length=0.15,col="blue")
+arrows(0, 0, -0.7185, -0.6955,length=0.15,col="red")
+arrows(0, 0, -0.6955, 0.7185,length=0.15,col="blue")
        #col = par("fg"), lty = par("lty"), xpd = FALSE)
 cov(dat)
 
 ```
 
 
+You try one.  The example below contains uncorrelated data.  
 
-### Example with uncorrelated data
 ```{r}
-set.seed(666)
+set.seed(999)
 dat<-mvrnorm(n = 500, mu=c(0,0), Sigma=matrix(c(2,0,0,2),nrow=2, ncol=2)) 
 par(pty="s")
 plot(dat,ylim=c(-4,4),xlim=c(-4,4))
-prcomp(dat)
-cov(dat)
+
 ```
 
 ## Most variability in x direction
@@ -83,6 +86,65 @@ prcomp(dat)
 
 
 ```{r}
+set.seed(666)
+dat<-mvrnorm(n = 500, mu=c(0,0), Sigma=matrix(c(2,1.5,1.5,2),nrow=2, ncol=2)) 
+datf<-data.frame(x=dat[,1],y=dat[,2],catgry=NA)
+datf[which(datf$x>0),]$catgry<-"A"
+datf[which(datf$x<0),]$catgry<-"B"
+datf$catgry <- as.factor(datf$catgry)
+r <- lda(formula = catgry ~ ., 
+         data = datf, 
+         prior = c(1,1)/2)
+
+plot(y~x, data=datf, col=as.integer(datf$catgry))
+
+pca <- prcomp(datf[,-3],
+              center = TRUE,
+              scale. = TRUE) 
+
+prop.pca = pca$sdev^2/sum(pca$sdev^2)
+
+
+#plot(pca, col=as.integer(datf$catgry))
+
+#prop.lda = lda$svd^2/sum(lda$svd^2)
+
+#plda <- predict(object = lda,
+#                newdata = datf)
+
+dataset = data.frame(grps = datf[,3],
+                     pca = pca$x)#, lda = plda$x)
+
+#ggplot(dataset) + geom_point(aes(lda.LD1, lda.LD2, colour = catgry, shape = grps), size = 2.5) + 
+#  labs(x = paste("LD1 (", percent(prop.lda[1]), ")", sep=""),
+#       y = paste("LD2 (", percent(prop.lda[2]), ")", sep=""))
+
+ggplot(dataset) + geom_point(aes(pca.PC1, pca.PC2, colour = grps, shape = grps), size = 2.5) +
+  labs(x = paste("PC1 (", percent(prop.pca[1]), ")", sep=""),
+       y = paste("PC2 (", percent(prop.pca[2]), ")", sep=""))
+
+#grid.arrange(p1, p2)
+```
+
+```{r}
+set.seed(666)
+#dat<-mvrnorm(n = 30, mu=c(0,0), Sigma=matrix(c(2,1.5,1.5,2),nrow=2, ncol=2)) 
+dat<-mvrnorm(n = 100, mu=c(0,0), Sigma=matrix(c(1,0,0,1),nrow=2, ncol=2))
+datf<-data.frame(x=dat[,1],y=dat[,2],catgry=NA)
+datf$catgry<-sample(c("A","B"),size=length(datf$x),replace=TRUE)
+datf$catgry <- as.factor(datf$catgry)
+plot(y~x, data=datf, col=as.integer(datf$catgry))
+
+r <- lda(formula = catgry ~ ., 
+         data = datf, 
+         prior = c(1,1)/2)
+
+prop.r  <- lda$svd^2/sum(lda$svd^2)
+predict(object=r, newdata = datf)
+plot(r, col = as.integer(datf$catgry))
+```
+
+```{r}
 ## from https://www.r-bloggers.com/how-to-perform-pca-on-r/
 pca<-princomp(USArrests, cor=TRUE)
 summary(pca)
@@ -91,4 +153,8 @@ summary(pca)
 
 ## example using petals data
 
+```{r}
+data("iris")
+
+```
 
