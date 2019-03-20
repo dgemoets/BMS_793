@@ -27,11 +27,11 @@ One sample t-test.  Very simple (not often used) but allows us to focus on p val
 Suppose we want to test H0: mu=5 vs Ha: mu not equal 5.  Let's do a simulation.
 
 ```{r}
-n <- 5 # sample size
-mu <- 5
+n <- 5    # sample size
+mu <- 5   # "true" population mean
 
 for (i in 1:10){
-samp <- rnorm(n,mean=mu,sd=1)  # generate some data assuming null is true
+samp <- rnorm(n,mean=mu,sd=10)  # generate some data assuming null is true
 mean.samp <- mean(samp)  # calculate the mean
 
 test.stat <- (mean.samp-mu)/sd(samp)
@@ -48,7 +48,7 @@ print(pval)
 What if the data are skewed?  
 
 ```{r}
-n <- 5 # sample size
+n <- 5000 # sample size
 mu <- 5
 
 for (i in 1:10){
@@ -64,6 +64,9 @@ pval <- pnorm(test.stat,lower.tail = TRUE)
 }
 print(pval)
 }
+
+samp <- exp(rnorm(n,mean=mu,sd=1)) 
+hist(samp)
 ```
 
 ## Randomization example
@@ -81,7 +84,7 @@ for (i in 1:N){
 hist(x.bar)
 
 ## data
-p.hat <- 0.7
+p.hat <- 0.5
 
 sum(x.bar>p.hat)/N
 
@@ -145,8 +148,8 @@ hist(x.bar)
 We can do inference with confidence intervals. 
 
 ```{r}
-samp <- rnorm(30,mean=5,sd=1)
-t.test(samp, mu=1)
+samp <- rnorm(30,mean=5,sd=1)  ## data
+t.test(samp, mu=4.5)             ## null is mu=1
 ```
 
 
@@ -162,6 +165,9 @@ pwr.t.test(n = 50, d = 1, sig.level = 0.05, type = c("one.sample"), alternative 
 curve(pwr.t.test(x, d = 1, sig.level = 0.002, type = c("one.sample"), alternative = c("two.sided"))$power,from=0, to=100,ylab="Power")
 
 ```
+
+
+
 
 
 
