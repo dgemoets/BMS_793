@@ -17,19 +17,19 @@ library(ggbiplot)
 
 ## PCA with iris data using datacamp tutorial
 
-Borrowing from <https://www.datacamp.com/community/tutorials/pca-analysis-r>
+Borrowing from <https://www.datacamp.com/community/tutorials/pca-analysis-r>.
 
-Basic plot.  I also commuted the correlation in the data, and after the PCA has been performed.
+Basic plot.  I also computed the correlation in the data, and after the PCA has been performed.
 ```{r}
 iris.pca <- prcomp(iris[,-5], center = TRUE,scale. = TRUE)
 
-summary(iris.pca)
-str(iris.pca)
+#summary(iris.pca)
+#str(iris.pca)
 cor(iris[,-5])
 cor(iris.pca$x)
 
 ggbiplot(iris.pca)
-ggbiplot(iris.pca, labels=rownames(iris))  ## not meaningful
+#ggbiplot(iris.pca, labels=rownames(iris))  ## not meaningful
 
 ```
 
@@ -104,7 +104,7 @@ Just an attempt. These data seem very noisy.
 ```{r}
 yeast.data <- read.csv("./yeast_data/SC_expression.csv",row.names = 1)
 yeast.covar <- read.csv("./yeast_data/conditions_annotation.csv")
-yeast.pca <- prcomp(yeast.data[,20:30], center = TRUE,scale. = TRUE)
+yeast.pca <- prcomp(yeast.data, center = TRUE,scale. = TRUE)
 ggbiplot(yeast.pca,var.axes=FALSE)
 ggbiplot(yeast.pca, var.axes=FALSE,labels=rownames(yeast.data))
 

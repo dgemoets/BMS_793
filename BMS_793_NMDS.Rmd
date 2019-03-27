@@ -26,7 +26,7 @@ library(psych)
 data("cities")
 
 city.location <- cmdscale(cities, k=2)    #ask for a 2 dimensional solution
-round(city.location,0)        #print the locations to the screen
+#round(city.location,0)        #print the locations to the screen
 plot(city.location,type="n", xlab="Dimension 1", ylab="Dimension 2",main ="cmdscale(cities)")    #put up a graphics window
 text(city.location,labels=names(cities))     #put the cities into the map
 
