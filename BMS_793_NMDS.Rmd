@@ -1,0 +1,74 @@
+---
+title: "BMS_793_NMDS.Rmd"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+##knitr::opts_chunk$set(echo = TRUE)
+#library(ggplot2)
+library(stats)
+library(MASS)
+#library(scales)
+library(vegan)
+#library(devtools)
+#install_github("vqv/ggbiplot")
+library(dplyr)
+#library(ggbiplot)
+```
+
+
+## Multidimensinoal scaling first.  
+
+MDS is also called principle coordinate analysis.  Here is a good reference: <https://rpubs.com/Shaahin/MDS_1> and another <http://personality-project.org/r/mds.html>.  Let's start with an intuitive example where the distances are literal distances.
+
+
+```{r}
+library(psych)
+data("cities")
+
+city.location <- cmdscale(cities, k=2)    #ask for a 2 dimensional solution
+round(city.location,0)        #print the locations to the screen
+plot(city.location,type="n", xlab="Dimension 1", ylab="Dimension 2",main ="cmdscale(cities)")    #put up a graphics window
+text(city.location,labels=names(cities))     #put the cities into the map
+
+```
+
+```{r}
+city.location <- -city.location
+plot(city.location,type="n", xlab="Dimension 1", ylab="Dimension 2",main ="cmdscale(cities)")    #put up a graphics window
+text(city.location,labels=names(cities))     #put the cities into the map
+```
+
+```{r}
+tst <- monoMDS(cities)
+plot(tst)
+```
+
+
+```{r}
+data("dune")
+temp <- vegdist(dune,distance="euclidean")
+dist(dune)
+ord <- metaMDS(dune)
+```
+
+
+
+
+This is a follow up to our initial work with PCA.  Most of the code is complete, but there are some places where I left small sections of code unfinished.
+
+```{r}
+community_matrix=matrix(
+   sample(1:100,300,replace=T),nrow=10,
+   dimnames=list(paste("community",1:10,sep=""),paste("sp",1:30,sep="")))
+
+
+example_NMDS <- metaMDS(community_matrix, # Our community-by-species matrix
+                     k=2) # The number of reduced dimensions
+
+
+
+```
+
+
+
