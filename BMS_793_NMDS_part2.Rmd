@@ -1,0 +1,408 @@
+---
+title: "BMS_793_NMDS_part2.Rmd"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+##knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+
+# Multidimensional scaling example
+
+This example, both code and text, is taken from <http://geoffreyzahn.com/nmds-example>.  This is a really good example.
+
+## NMDS
+First, let’s load the required packages and import the otu table and metadata table from the .csv files (make sure to change the file paths to wherever you downloaded the data):
+
+```{r}
+library(ggplot2)
+library(vegan)
+otus = read.csv(file = "EPIPHYTE_OTU_TABLE.csv", header = TRUE, check.names = FALSE, row.names = 1)
+metadata = read.csv(file = "EPIPHYTE_METADATA.csv", header = TRUE, check.names = FALSE, row.names = 1)
+
+```
+
+
+I noticed that some of my samples don’t have any OTUs in them (zeros all the way down) so I want to remove those.  We can check for, and remove, samples matching any criteria we like from both the OTU table and the metadata table at the same time.
+
+```{r}
+good_samples <- colnames(otus[(colSums(decostand(otus,"pa")) >= 1)])     # decostand(x,"pa") counts presence/absence
+otus = otus[,good_samples]
+metadata = metadata[good_samples,]
+```
+
+There are more parsimonious ways of doing this, but this way you can easily adapt it to remove samples with richness less than any value you like…that’s why I bothered with decostand().
+
+Now that we have gotten rid of useless samples, we need to transpose the OTU table so that samples = rows and OTUs = columns, because this is how the vegan package likes it.
+
+```{r}
+t_otus <- as.data.frame(t(otus))
+
+```
+
+Next, we will rarefy our data set down to the lowest OTU abundance so that we can compare evenly between samples regardless of sampling depth artefacts.  There has been some recent debate about the efficacy of rarefying community data (read a very thought-provoking paper here) and there is growing consensus that rarefying data down to a “lowest-common-denomenator” is not statistically valid and can lead to loss of statistical power.  That said, it is currently still a common practice and for the purposes of this example, we will go ahead and rarefy rather than normalize the data in other ways in order to focus on the NMDS process.  Note that rarefaction and rarefying are two completely different things!
+
+```{r}
+min_depth = min(colSums(otus))
+ t_otus_rarefied <- as.data.frame(round(rrarefy(t_otus, min_depth)))
+```
+
+Above, we determined our OTU count for the lowest abundance sample and then rarefied the data to that (randomly selected only 3,679 hits from each sample).  Next, we want to transform our rarefied OTU table (square-root) and determine the best method for calculating a distance matrix from it.
+
+```{r}
+sqrt_t_otus_rarefied = sqrt(t_otus_rarefied)
+rank.totus <- rankindex(as.matrix(sqrt_t_otus_rarefied), t_otus_rarefied, indices = c("bray", "euclid", "manhattan", "horn"), method = "spearman")
+print(paste("The highest rank was given by the", names(sort(rank.totus, decreasing = TRUE)[1]), "method."))
+
+```
+
+This prints out the method which is best for our data set, in this case “Bray-Curtis,” so we will use “bray” as the method to construct our community distance matrix:
+
+```{r}
+otus_dist = as.matrix((vegdist(t_otus_rarefied, "bray")))
+
+```
+
+
+Now we are finally ready to perform NMDS on our data!  The following will conduct NMDS and use the results to compose a data frame with NMDS coordinates and associated metadata for each sample:
+
+```{r}
+#perform NMDS
+ NMDS = metaMDS(otus_dist)
+#build a data frame with NMDS coordinates and metadata
+ MDS1 = NMDS$points[,1]
+ MDS2 = NMDS$points[,2]
+ NMDS = data.frame(MDS1 = MDS1, MDS2 = MDS2, Host = metadata$Host_Taxon, Location = metadata$Location)
+```
+
+Here is a peek at what our data frame should look like:
+
+```{r}
+head(NMDS)
+```
+
+It’s time to plot this and take a look at where our samples fall in “ordination space.”  We will use ggplot2 because it’s lovely.  It takes a bit of effort to get used to, but it’s an excellent package for plotting and comes with a ton of functionality.  (Here is a nice intro tutorial for playing with ggplot)
+
+```{r}
+ggplot(NMDS, aes(x=MDS1, y=MDS2, col=Location)) +
+ geom_point() +
+ stat_ellipse() +
+ theme_bw() +
+ labs(title = "NMDS Plot")
+
+```
+
+## Inference
+
+Here we see that our ellipses (representing 95% CI around the centroid) have a lot of overlap.  To me, this looks like the epiphyte communities aren’t very different for each other: Boring news for scientists looking for a story, but great news for the snails who might have to move to a new location.  Still, we need to run some statistical tests to make sure.  There are two main options for this sort of project: adonis(), and anosim().  Adonis is the vegan implementation of a permutational analysis of variance, and anosim is similar, but is an analysis of similarity.
+
+Here is some more detail about the two methods (taken from the QIIME help page), though you should read more about them in the R help files:
+
+Adonis is a nonparametric statistical method that takes a distance matrix and a category to determine sample grouping from. It computes an R2 value (effect size) which shows the percentage of variation explained by the supplied category, as well as a p-value to determine the statistical significance. Adonis creates a set by first identifying the relevant centroids of the data and then calculating the squared deviations from these points. After that, significance tests are performed using F-tests based on sequential sums of squares from permutations of the raw data.
+
+—–
+
+ANOSIM is a method that tests whether two or more groups of samples are significantly different (similar to adonis, above). You can specify a category in the metadata to separate samples into groups and then test whether there are significant differences between those groups.  Since ANOSIM is nonparametric, statistical significance is determined through permutations.
+Note: ANOSIM only works with a categorical variable that is used to do the grouping. Mantel is recommended for continuous variables.
+
+ 
+
+To do this with our data in R:
+
+```{r}
+anosim_location = anosim(otus_dist, metadata$Location)
+ anosim_location # take a look at results
+ summary(anosim_location)
+ plot(anosim_location)
+
+```
+
+This performed anosim on our distance matrix with Location as a categorical predictor.  Anosim has built-in summary() and plot() methods that provide a lot of helpful information for interpreting the results.  Your anosim result should look like this (see above)
+
+This essentially says that our communities are statistically different from each other, contrary to what our plot seemed to show.  Let’s take a look at PermANOVA, using adonis(), which is generally considered to be more robust than anosim().
+
+```{r}
+adonis_location = adonis(otus_dist ~ Location, metadata)
+adonis_location # take a look at results; there are no summary() or plot() methods included
+
+```
+
+And the results I got are above. 
+
+ 
+
+Similar to anosim!  Still, the real question we were asking with these data wasn’t about all seven sites together…we had some paired sites in mind.  For example, the snails at the site called “Skeet Pass” are under consideration to be moved to the proposed site at “Kaala Bog.”  So, the real question is whether each current site is different from its proposed site(s), not whether any of the communities are different.  For a standard ANOVA we could just run a post-hoc test to determine which groups are different from each other (e.g., a Tukey test), but anosim and adonis do not have any valid post-hoc methods currently.  In that case, what we can do is split up our data into paired sites and perform anosim on each subset, which should give us an idea as to whether there are differences between the sites that we care about.
+
+```{r}
+
+
+# Get columns from each of the seven site locations
+CV69_cols = grep('^69CV',names(otus)) 
+DSPK_cols = grep('^DS',names(otus))
+Skeet_cols = grep('^SP',names(otus))
+KK_cols = grep('^KK',names(otus))
+ThreeP_cols = grep('^3P',names(otus))
+KB_cols = grep('^KB',names(otus))
+EKH_cols = grep('^EKH',names(otus))
+
+# Generate a rarefied OTU table from each site:
+Culvert_69 <- t_otus_rarefied[CV69_cols,]
+DS_Palikea <- t_otus_rarefied[DSPK_cols,]
+Skeet_Pass <- t_otus_rarefied[Skeet_cols,]
+Kaaikukai <- t_otus_rarefied[KK_cols,]
+Three_Pts <- t_otus_rarefied[ThreeP_cols,]
+KaalaBog <- t_otus_rarefied[KB_cols,]
+Ekahanui <- t_otus_rarefied[EKH_cols,]
+
+#group OTUs from each set of donor/recipient sites...these will be the three comparisons
+skeet_kaala = rbind(Skeet_Pass,KaalaBog)
+three_pts_cv69 = rbind(Three_Pts, Culvert_69)
+palikea_sites = rbind(DS_Palikea, Kaaikukai, Ekahanui)
+
+#remove "empty" OTUs that pop up since we are subsetting the large OTU table
+skeet_kaala = skeet_kaala[,which(colSums(skeet_kaala) != 0)]
+three_pts_cv69 = three_pts_cv69[,which(colSums(three_pts_cv69) != 0)]
+palikea_sites = palikea_sites[,which(colSums(palikea_sites) != 0)]
+
+#perform anosim on each meaningful combination
+#anosim(three_pts_cv69, metadata$Location)
+#anosim(skeet_kaala, metadata$Location)
+#anosim(palikea_sites, metadata$Location)
+
+```
+
+And here is what I got (results above).
+
+
+So, there seems to be no significant differences between current and proposed site combinations, even though our first analysis showed that the sites were different from each other, in general.  This makes sense intellectually, since the current and proposed sites for the snails were pretty close together spatially, but the three current snail sites were further apart.  Bottom line is that as long as they don’t move the snail populations too far from where they are, the microbial community (food source) won’t be too different for them.
+
+I hope this was a helpful example of how to get started doing (and plotting) NMDS and using the anosim() and adonis() functions to determine whether community compositions are statistically different.
+
+# Another example
+
+Using data from Dr. Candice Brown.
+
+
+## nMDS tutorial using WT beta diversity data 
+
+All the R code is included in this tutorial.  In the subsequent results I'll suppress the extraneous R output.
+
+First load the data and load the required R packages.  Only loading the Bray distance data (other iterations will have all the other distances included.)
+
+
+```{r, message=FALSE, warning=FALSE}
+library(vegan); library(tidyr); library(dplyr); library(vegan)
+beta.bray.data <- read.delim("distance_bray.txt")
+WT_CVN_HN_AD.data <-read.csv("WT_CVN_HN_AD.csv")
+#levels(WT_CVN_HN_AD.data$Genotype)<-c("CVN","WT","WT")    ## recode Genotype to remove WT (CR) level
+```
+
+<!-- ## Process data
+  
+  Start with stroke data.  Match sample IDs between beta diversity and Candice's reference spreadsheet.  Values 1-107 refer to the stroke data. -->  
+
+This chunk processes the distance matrices to match the form of of the reference data.  That is, the dataframe beta.bray.data labels the subjects with s in front of the ID numbers (e.g., s004 is subject 4) whereas the reference data is missing the "s".  The code below tacks on the "s", then matches the subjects in the reference data with the Bray data. 
+
+```{r}
+WT_CVN_HN_AD.data$sample <- paste0("s",WT_CVN_HN_AD.data$Sample..)
+nostroke.covar.data <-WT_CVN_HN_AD.data #,HN_baseline.data)
+## bray
+temp.nostroke.beta<-subset(beta.bray.data, select = nostroke.covar.data$sample)  ## select columns
+nostroke.beta.data.bray<-temp.nostroke.beta[nostroke.covar.data$sample, ]               ## select rows
+
+
+## put "s" on subject IDs
+## select subset of Bray distance matrix that correspond to reference data 
+#nostroke.beta.data<-beta.bray.data[nostroke.covar.data$sample,nostroke.covar.data$sample ] 
+temp.nostroke.beta<-subset(beta.bray.data, select = nostroke.covar.data$sample)  ## select columns
+nostroke.beta.data<-temp.nostroke.beta[nostroke.covar.data$sample, ]               ## select rows
+```
+
+
+### Basic nMDS plot, Bray distance
+
+In this version I'm using non-metric multidimensional scaling (nMDS) instead of PCoA (principle coordinates analysis).  Both are ordination methods. nMDS is a standard in community ecology, and treats the data as ordinal, meaning it uses ranks rather than actual distances.  PCoA (also known as classical MDS) uses Euclidean distance.  The advantages of nMDS are 1)  can fit a nonlinear surface for age to see relationships between diversity and age and 2) is more conservative than PCoA.  If you think about, the "distances" (measures of dissimilarity or diversity) that we're using to compare organisms aren't really distances in the strict sense, so the rankings are probably more meaningful.
+
+The results should be comparable between nMDS and PCoA.  I'll have version with PCoA for comparison for you as well.  Below are only the results for WT mice.  I'll have another file with all the results shortly.
+
+First take a subset of the data corresponding to WT and remove 12 month old mice (since there are no 12 month female mice).
+
+```{r}
+WT.nostroke.covar.data <- subset(nostroke.covar.data, Genotype=="WT" &  Age..month. < 12)
+WT.nostroke.beta.data <- nostroke.beta.data[WT.nostroke.covar.data$sample,WT.nostroke.covar.data$sample ]
+```
+
+Now we do the ordination. These functions are in the vegan R package.  First we just plot diversity.  The numerical values are ages (in months) and the colors are red for female and blue for male.  Note that red and blue are mostly clustered together, and the 1s are clustered together.  So diversity is similar for the 1 month mice, and similar for male and female, respectively.  
+
+Also, the 1s are close to the center of the plot, so they are the most similar to the other mice (points in the center are closest to all the other points).  Finally, the orientation of the plot does not matter.  That is, we could reflect it about the x or y axis and the meaning is the same.
+
+```{r, warning=FALSE, message=FALSE}
+## create MDS object
+WT.fit <- metaMDS(WT.nostroke.beta.data, distance="bray", k=2, trace=FALSE)
+## plot MDS object.  "n" suppresses output since points are added below. 
+ordiplot(WT.fit, type="n") 
+## extract x and y points to add to plot
+x <- WT.fit$points[, 1]
+y <- WT.fit$points[, 2]
+## create color vector to color code for sex
+clr<-c('red','blue')
+## find locations in reference data for M and F
+loc<-as.numeric(WT.nostroke.covar.data$Sex)
+## Add points that are ages, color coded by sex
+text(x,y,labels=WT.nostroke.covar.data$Age..month.,col=clr[loc])
+## Add axes
+abline(h=0, lty="dotted");abline(v=0, lty="dotted")
+## Add legend
+legend("topright", legend=c("Female", "Male"),
+col=clr, fill = clr, cex=0.9)
+
+```
+
+
+### Closer look at effect of sex on diversity
+
+Let's now look at the sex variable.  We can add an ellipse for each sex to denote : 1) 95% confidence bounds, or 2) to outline all the points.  The plot below adds 95% confidence ellipses about the centriods for male and female.
+
+```{r, message=FALSE, warning=FALSE}
+## create MDS object
+WT.fit <- metaMDS(WT.nostroke.beta.data, distance="bray", k=2, trace=FALSE)
+## plot MDS object.  "n" suppresses output since points are added below. 
+ordiplot(WT.fit, type="n") 
+## extract x and y points to add to plot
+x <- WT.fit$points[, 1]
+y <- WT.fit$points[, 2]
+## create color vector to color code for sex
+clr<-c('red','blue')
+## find locations in reference data for M and F
+loc<-as.numeric(WT.nostroke.covar.data$Sex)
+## Add points that are ages, color coded by sex
+text(x,y,labels=WT.nostroke.covar.data$Age..month.,col=clr[loc])
+## Add axes
+abline(h=0, lty="dotted");abline(v=0, lty="dotted")
+## Add legend
+legend("topright", legend=c("Female", "Male"),
+col=clr, fill = clr, cex=0.9)
+## Add ellipse for sex and surface for age
+ordiellipse(WT.fit, WT.nostroke.covar.data$Sex, col=clr, lwd=3, kind="se", conf=0.95 ) ##kind = "seehull")
+```
+
+The centroid for male and female are in the centers of each ellipse.   Note that the ellipses do not overlap, so we have evidence that the distances (dissimilarities actually) are different between sexes.
+
+To actually test this difference, we use the following code.  Note the p value of 0.001.  So the there is evidence of a sex effect.  We can also use this function to show the directions of greatest correlation with respect to sex. 
+
+```{r}
+envfit(WT.fit~WT.nostroke.covar.data$Sex)
+```
+
+This plot below shows ellipses to encircle all the points.  This gives a nice visual of the relative locations of each sex.
+
+
+```{r, message=FALSE}
+## create MDS object
+WT.fit <- metaMDS(WT.nostroke.beta.data, distance="bray", k=2, trace=FALSE)
+## plot MDS object.  "n" suppresses output since points are added below. 
+ordiplot(WT.fit, type="n") 
+## extract x and y points to add to plot
+x <- WT.fit$points[, 1]
+y <- WT.fit$points[, 2]
+## create color vector to color code for sex
+clr<-c('red','blue')
+## find locations in reference data for M and F
+loc<-as.numeric(WT.nostroke.covar.data$Sex)
+## Add points that are ages, color coded by sex
+text(x,y,labels=WT.nostroke.covar.data$Age..month.,col=clr[loc])
+## Add axes
+abline(h=0, lty="dotted");abline(v=0, lty="dotted")
+## Add legend
+legend("topright", legend=c("Female", "Male"),
+col=clr, fill = clr, cex=0.9)
+## Add ellipse for sex and surface for age
+ordiellipse(WT.fit, WT.nostroke.covar.data$Sex, col=clr, lwd=3, kind="ehull")
+```
+
+### Closer look at effect of age
+
+Age is a quantitative variable, so to look at the age effect we can: 1) fit a surface using age, which allows for nonlinear effects of age or 2) fit an age vector, showing the linear effect of age.  First the linear vector.
+
+In the plot below the vector "...finds directions in the ordination space towards which the environmental vectors [in this case age] change most rapidly and to which they have maximal correlations with the ordination configuration." You can sort of see in the plot is pointing in the direction of increasing age.  
+
+```{r, message=FALSE}
+## create MDS object
+WT.fit <- metaMDS(WT.nostroke.beta.data, distance="bray", k=2, trace=FALSE)
+## plot MDS object.  "n" suppresses output since points are added below. 
+ordiplot(WT.fit, type="n") 
+## extract x and y points to add to plot
+x <- WT.fit$points[, 1]
+y <- WT.fit$points[, 2]
+## create color vector to color code for sex
+clr<-c('red','blue')
+## find locations in reference data for M and F
+loc<-as.numeric(WT.nostroke.covar.data$Sex)
+## Add points that are ages, color coded by sex
+text(x,y,labels=WT.nostroke.covar.data$Age..month.,col=clr[loc])
+## Add axes
+abline(h=0, lty="dotted");abline(v=0, lty="dotted")
+## Add legend
+legend("topright", legend=c("Female", "Male"),
+col=clr, fill = clr, cex=0.9)
+## Add ellipse for sex and surface for age
+#Age<-WT.nostroke.covar.data$Age..month.
+Age<-WT.nostroke.covar.data$Age..month.
+plot(envfit(WT.fit~Age))#, col = "cyan3",knots=9,cex=a)
+
+```
+
+The reason this plot is not very clear is the vector is not significant (p=0.272).
+
+```{r}
+envfit(WT.fit~Age, plot=FALSE)
+```
+
+So there is not a meaningful linear direction through the ordination space in increasing age.
+
+Next we fit a non linear surface for the age variable.  The plot shows contours (think topographical map).  The curves in this case are curves of constant age.  Note how the 1s all lie on the same curve, as do the 3s. 
+
+```{r, message=FALSE}
+## create MDS object
+WT.fit <- metaMDS(WT.nostroke.beta.data, distance="bray", k=2,  trace=FALSE)
+## plot MDS object.  "n" suppresses output since points are added below. 
+ordiplot(WT.fit, type="n") 
+## extract x and y points to add to plot
+x <- WT.fit$points[, 1]
+y <- WT.fit$points[, 2]
+## create color vector to color code for sex
+clr<-c('red','blue')
+## find locations in reference data for M and F
+loc<-as.numeric(WT.nostroke.covar.data$Sex)
+## Add points that are ages, color coded by sex
+text(x,y,labels=WT.nostroke.covar.data$Age..month.,col=clr[loc])
+## Add axes
+abline(h=0, lty="dotted");abline(v=0, lty="dotted")
+## Add legend
+legend("topright", legend=c("Female", "Male"),
+col=clr, fill = clr, cex=0.9)
+## Add ellipse for sex and surface for age
+ordisurf(WT.fit, WT.nostroke.covar.data$Age..month., add = TRUE, col = "cyan3",knots=9,cex=a)
+
+```
+
+To test the significance of the surface, use the following code.  Note the small p-value.  So this non linear model for diversity as a function of distance is significant.  This plot would make more sense if we had the points as species labels (or some other label) rather than age. 
+
+```{r}
+summary(ordisurf(WT.fit, WT.nostroke.covar.data$Age..month.,plot=FALSE,knots=9))
+```
+
+
+### Signifance testing
+
+Finally, we can run what is essentially a MANOVA, where the diversity is the response, and age and sex are the predictors.  We also can include an interaction term.
+
+```{r}
+adonis2(WT.nostroke.beta.data~Age..month.*Sex, data=WT.nostroke.covar.data)
+```
+
+Note that Age is not significant (p=0.11) but the interaction between Age and Sex are.  Sex is significant as well.
+
+
